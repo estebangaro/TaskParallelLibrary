@@ -1,13 +1,20 @@
 ﻿using System;
+using System.Collections;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Lab_01
 {
     public partial class Lab_01 : Form
     {
         public Lab_01() => InitializeComponent();
+
+        private CancellationTokenSource Cts;
+        private CancellationToken Ct;
+        private Task LongTask;
 
         private void CreateTask()
         {
@@ -85,6 +92,57 @@ namespace Lab_01
 
         delegate void AddMessageDelegate();
 
+        private void RunTask(byte taskNumber)
+        {
+            WriteToOutput($"Iniciando tarea {taskNumber}");
+            Thread.Sleep(10000);
+            WriteToOutput($"Finalizando tarea {taskNumber}");
+        }
+
+        private void RunTaskGroup()
+        {
+            Task[] Tasks =
+            {
+                Task.Run(() => RunTask(1)),
+                Task.Run(() => RunTask(2)),
+                Task.Run(() => RunTask(3)),
+                Task.Run(() => RunTask(4)),
+                Task.Run(() => RunTask(5))
+            };
+
+            Task.Run(delegate
+            {
+                WriteToOutput("Esperando a que finalicen todas las tareas");
+                int index = Task.WaitAny(Tasks);
+                WriteToOutput($"La tarea {index} ha finalizado por lo tanto se reanuda la ejecución del hilo secundario.");
+            });
+        }
+
+        private void ReturnTaskValue()
+        {
+            //Task<int> TaskInt = Task.Run(delegate ()
+            //{
+            //    WriteToOutput("Generando un valor entero aleatorio...");
+            //    Thread.Sleep(10000);
+            //    WriteToOutput("Valor de mi propiedad Result: ");
+            //    WriteToOutput($"Result: {this.Result}");
+            //    return new Random().Next(1000);
+            //});
+            Task<int> TaskInt = new Task<int>(delegate
+            {
+                WriteToOutput("Generando un valor entero aleatorio...");
+                Thread.Sleep(10000);
+                return new Random().Next(1000);
+            });
+
+            Task.Run(delegate
+            {
+                WriteToOutput($"Esperar el resultado de la tarea...");
+                WriteToOutput($"Valor devuelto por la tarea: {TaskInt.Result}");
+                WriteToOutput($"Fin de la ejecución del método ReturnTaskValue");
+            });
+        }
+
         private void AddMessage(string message)
         {
             int ManagedThreadId = Thread.CurrentThread.ManagedThreadId;
@@ -101,6 +159,61 @@ namespace Lab_01
                 System.Diagnostics.Debug.WriteLine($"Mensaje: {message}, " +
                     $"Hilo Actual: {Thread.CurrentThread.ManagedThreadId} \n");
 
-        private void Lab_01_Load(object sender, EventArgs e) => CreateTask();
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Cts = new CancellationTokenSource();
+            Ct = Cts.Token;
+
+            int[] ArrayInts;
+            ArrayInts = Enumerable.Range(1, 10).ToArray();
+
+            Task.Run(delegate {
+                LongTask = Task.Run(() =>
+                    {
+                        for (int i = 0; i < ArrayInts.Length && !Ct.IsCancellationRequested; i++)
+                        {
+                            AddMessage($"Procesando entero {ArrayInts[i]}");
+                            Thread.Sleep(2000);
+                        }
+
+                        if (Ct.IsCancellationRequested)
+                        {
+                            // Lógica de solicitud de cancelación.
+                            AddMessage("Cancelando proceso...");
+                            throw new OperationCanceledException(Ct);
+                            //Ct.ThrowIfCancellationRequested();
+                        }
+                    }, Ct);
+                try
+                {
+                    LongTask.Wait();
+                }
+                catch(AggregateException ae)
+                {
+                    AddMessage("Se han manejado las siguientes exepciones");
+                    foreach(var Inner in ae.InnerExceptions)
+                    {
+                        if (!(Inner is TaskCanceledException))
+                            AddMessage($"Exepción: {Inner.Message}");
+                        else
+                            AddMessage("TaskCanceledExeption manejada");
+                    }
+                }
+            });
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            Cts.Cancel();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            AddMessage($"Estatus LongTask: {LongTask.Status}");
+        }
+
+
+
+        //private void Lab_01_Load(object sender, EventArgs e) => ReturnTaskValue(); //RunTaskGroup(); //CreateTask();
     }
 }
