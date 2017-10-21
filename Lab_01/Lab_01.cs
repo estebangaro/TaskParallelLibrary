@@ -12,9 +12,10 @@ namespace Lab_01
     {
         public Lab_01() => InitializeComponent();
 
-        private CancellationTokenSource Cts;
-        private CancellationToken Ct;
-        private Task LongTask;
+        private CancellationTokenSource[] Cts;
+        private CancellationToken[] Ct;
+        private Task[] LongTask;
+        private Task SecondTask;
 
         private void CreateTask()
         {
@@ -159,38 +160,51 @@ namespace Lab_01
                 System.Diagnostics.Debug.WriteLine($"Mensaje: {message}, " +
                     $"Hilo Actual: {Thread.CurrentThread.ManagedThreadId} \n");
 
+        private void ExecuteLongWork(int seconds, int[] ArrayInts, 
+            CancellationToken Ct, int taskNumber)
+        {
+            for (int i = 0; i < ArrayInts.Length && !Ct.IsCancellationRequested; i++)
+            {
+                AddMessage($"Procesando entero en tarea [{taskNumber}] {ArrayInts[i]}");
+                Thread.Sleep(seconds * 1000);
+            }
+
+            if (Ct.IsCancellationRequested)
+            {
+                // Lógica de solicitud de cancelación.
+                AddMessage("Cancelando proceso...");
+
+                if (taskNumber == 1)
+                    throw new OperationCanceledException(Ct);
+                else if (taskNumber == 2)
+                    throw new DivideByZeroException();
+                else
+                    throw new NotImplementedException();
+                //Ct.ThrowIfCancellationRequested();
+            }
+        }
+
         private void button1_Click(object sender, EventArgs e)
         {
-            Cts = new CancellationTokenSource();
-            Ct = Cts.Token;
+            Cts = new CancellationTokenSource[] { new CancellationTokenSource(), new CancellationTokenSource(),
+                new CancellationTokenSource() };
+            Ct = new CancellationToken[] { Cts[0].Token, Cts[1].Token, Cts[2].Token };
 
             int[] ArrayInts;
             ArrayInts = Enumerable.Range(1, 10).ToArray();
 
-            Task.Run(delegate {
-                LongTask = Task.Run(() =>
-                    {
-                        for (int i = 0; i < ArrayInts.Length && !Ct.IsCancellationRequested; i++)
-                        {
-                            AddMessage($"Procesando entero {ArrayInts[i]}");
-                            Thread.Sleep(2000);
-                        }
-
-                        if (Ct.IsCancellationRequested)
-                        {
-                            // Lógica de solicitud de cancelación.
-                            AddMessage("Cancelando proceso...");
-                            throw new OperationCanceledException(Ct);
-                            //Ct.ThrowIfCancellationRequested();
-                        }
-                    }, Ct);
+            SecondTask = Task.Run(delegate {
+                LongTask = new Task[] { Task.Run(() => ExecuteLongWork(3, ArrayInts, Ct[0], 1), Ct[1]),
+                Task.Run(() => ExecuteLongWork(5, ArrayInts, Ct[0], 2), Ct[0]),
+                Task.Run(() => ExecuteLongWork(6, ArrayInts, Ct[0], 3), Ct[0])
+                };
                 try
                 {
-                    LongTask.Wait();
+                    Task.WaitAll(LongTask);
                 }
                 catch(AggregateException ae)
                 {
-                    AddMessage("Se han manejado las siguientes exepciones");
+                    AddMessage("Se han manejado las siguientes exepciones en Hilo Secundario");
                     foreach(var Inner in ae.InnerExceptions)
                     {
                         if (!(Inner is TaskCanceledException))
@@ -204,15 +218,26 @@ namespace Lab_01
 
         private void button2_Click(object sender, EventArgs e)
         {
-            Cts.Cancel();
+            Cts[0].Cancel();
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            AddMessage($"Estatus LongTask: {LongTask.Status}");
+            int i = 1;
+            foreach (var Task in LongTask)
+                AddMessage($"Estatus LongTask {i++}: {Task.Status}");
+            AddMessage($"Estatus LongTask SecondTask: {SecondTask.Status}");
         }
 
+        private void button4_Click(object sender, EventArgs e)
+        {
+            Cts[1].Cancel();
+        }
 
+        private void button5_Click(object sender, EventArgs e)
+        {
+            Cts[2].Cancel();
+        }
 
         //private void Lab_01_Load(object sender, EventArgs e) => ReturnTaskValue(); //RunTaskGroup(); //CreateTask();
     }
