@@ -194,9 +194,9 @@ namespace Lab_01
             ArrayInts = Enumerable.Range(1, 10).ToArray();
 
             SecondTask = Task.Run(delegate {
-                LongTask = new Task[] { Task.Run(() => ExecuteLongWork(3, ArrayInts, Ct[0], 1), Ct[1]),
-                Task.Run(() => ExecuteLongWork(5, ArrayInts, Ct[0], 2), Ct[0]),
-                Task.Run(() => ExecuteLongWork(6, ArrayInts, Ct[0], 3), Ct[0])
+                LongTask = new Task[] { Task.Run(() => ExecuteLongWork(3, ArrayInts, Ct[0], 1), Ct[0]),
+                Task.Run(() => ExecuteLongWork(5, ArrayInts, Ct[1], 2), Ct[1]),
+                Task.Run(() => ExecuteLongWork(6, ArrayInts, Ct[2], 3), Ct[2])
                 };
                 try
                 {
