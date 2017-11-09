@@ -12,9 +12,11 @@ namespace Lab_02
         static void Main(string[] args)
         {
             // RunParallelTasks();
-            Console.WriteLine($"Ejecutando ciclos de iteración en paralelo. {Thread.CurrentThread.ManagedThreadId}");
-            ParallelLoopIterate();
-            Console.WriteLine("Finalizando ejecución de tareas en paralelo...");
+            Console.WriteLine($"Ejecutando consulta LINQ To Objects y PLINQ. {Thread.CurrentThread.ManagedThreadId}");
+            // ParallelLoopIterate();
+            RunLINQ();
+            RunPLINQ();
+            Console.WriteLine("Finalizando ejecución de consulta LINQ To Objects y PLINQ...");
             Console.WriteLine("Presione <enter> para finalizar");
             Console.ReadLine();
         }
@@ -39,17 +41,55 @@ namespace Lab_02
         }
 
         static void ParallelLoopIterate()
-        {
+        { 
             int[] ArrayOfInts = new int[5];
-            Parallel.For(0, 5, delegate (int index)
+            ParallelLoopResult ForLoopResult = Parallel.For(0, 5, delegate (int index)
             {
                 ArrayOfInts[index] = index * index;
                 WriteToConsole($"Calculando el cuadrado de {index}");
             });
-
+            WriteToConsole($"Estado de ejecución de iteración de ciclo en paralelo (For): {(ForLoopResult.IsCompleted ? "Ejecución completa" : "Ejecución incompleta")}");
             WriteToConsole("Mostrando los cuadrados calculados...");
-            Parallel.ForEach(ArrayOfInts, intNumber =>
+            ParallelLoopResult ForEachLoopResult = Parallel.ForEach(ArrayOfInts, intNumber =>
                 WriteToConsole($"Cuadrado de {Array.IndexOf(ArrayOfInts, intNumber)}: {intNumber}"));
+            WriteToConsole($"Estado de ejecución de iteración de ciclo en paralelo (ForEach): {(ForEachLoopResult.IsCompleted ? "Ejecución completa" : "Ejecución incompleta")}");
+        }
+
+        static void RunLINQ()
+        {
+            System.Diagnostics.Stopwatch S = new System.Diagnostics.Stopwatch();
+            S.Start();
+            List<ProductDTO> Products = NorthWind.Repository.Products.Select(
+                    product => new ProductDTO
+                    {
+                        ProductId = product.ProductID,
+                        ProductName = product.ProductName,
+                        UnitPrice = product.UnitPrice,
+                        UnitsInStock = product.UnitsInStock
+                    }
+                ).ToList();
+            S.Stop();
+            WriteToConsole($"Tiempo de ejecución con LINQ: {S.ElapsedTicks} ticks... para un total" +
+                $" de {Products.Count} productos recuperados.");
+        }
+
+        static void RunPLINQ()
+        {
+            System.Diagnostics.Stopwatch S = new System.Diagnostics.Stopwatch();
+            S.Start();
+            List<ProductDTO> Products = NorthWind.Repository.Products.AsParallel()
+                .Select(
+                    product => new ProductDTO
+                    {
+                        ProductId = product.ProductID,
+                        ProductName = product.ProductName,
+                        UnitPrice = product.UnitPrice,
+                        UnitsInStock = product.UnitsInStock
+                    }
+                ).ToList();
+            S.Stop();
+            WriteToConsole($"Tiempo de ejecución con PLINQ: {S.ElapsedTicks} ticks... para un total" +
+                $" de {Products.Count} productos recuperados.");
         }
 
         static void WriteToConsole(string message)
