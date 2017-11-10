@@ -239,6 +239,82 @@ namespace Lab_01
             Cts[2].Cancel();
         }
 
+        private void continuacion_Click(object sender, EventArgs e)
+        {
+            // RunParallelTasks();
+            AddMessage($"Ejecutando RunContinuationTasks. {Thread.CurrentThread.ManagedThreadId}");
+            // ParallelLoopIterate();
+            // RunLINQ();
+            // RunPLINQ();
+            Task.Run(delegate { RunContinuationTasks(); });
+            AddMessage("Finalizando ejecución de RunContinuationTasks...");
+        }
+
+        static List<string> GetProductNames()
+        {
+            Thread.Sleep(3000);
+            throw new NotImplementedException();
+            return new List<string> { "PlayStation 4", "Tomb Raider", "PES", "The Last Of Us", "FIFA 18" };
+        }
+
+        void RunContinuationTasks()
+        {
+            Task<List<string>> GameNamesTask = new Task<List<string>>(
+                    () => GetProductNames());
+         
+            Task<int> ProcessGameNames = GameNamesTask.ContinueWith(
+                gameNameTask => ProcessData(gameNameTask));
+
+            GameNamesTask.Start();
+            try
+            {
+                AddMessage($"El número de nombres de juegos procesados es: {ProcessGameNames.Result}");
+            }
+            catch (AggregateException ex)
+            {
+                AddMessage($"Exepción controlada: {ex.Message}");
+            }
+        }
+
+        int ProcessData(List<string> GameNames)
+        {
+            int i = 0;
+            if (GameNames != null)
+            {
+                foreach (string name in GameNames)
+                {
+                    AddMessage($"Nombre ({++i}): {name}");
+                }
+
+                return GameNames.Count;
+            }
+            else
+            {
+                AddMessage($"Sin información de nombres de juego");
+                return i;
+            }
+        }
+
+        int ProcessData(Task<List<string>> GameNames)
+        {
+            List<string> gamesnames = GameNames.Result;
+            int i = 0;
+            if (GameNames.Status != TaskStatus.Faulted)
+            {
+                foreach (string name in GameNames.Result)
+                {
+                    AddMessage($"Nombre ({++i}): {name}");
+                }
+
+                return GameNames.Result.Count;
+            }
+            else
+            {
+                AddMessage($"Sin información de nombres de juego");
+                return i;
+            }
+        }
+
         //private void Lab_01_Load(object sender, EventArgs e) => ReturnTaskValue(); //RunTaskGroup(); //CreateTask();
     }
 }

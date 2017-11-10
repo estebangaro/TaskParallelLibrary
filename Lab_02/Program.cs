@@ -12,11 +12,12 @@ namespace Lab_02
         static void Main(string[] args)
         {
             // RunParallelTasks();
-            Console.WriteLine($"Ejecutando consulta LINQ To Objects y PLINQ. {Thread.CurrentThread.ManagedThreadId}");
+            Console.WriteLine($"Ejecutando RunContinuationTasks. {Thread.CurrentThread.ManagedThreadId}");
             // ParallelLoopIterate();
-            RunLINQ();
-            RunPLINQ();
-            Console.WriteLine("Finalizando ejecución de consulta LINQ To Objects y PLINQ...");
+            // RunLINQ();
+            // RunPLINQ();
+            RunContinuationTasks();
+            Console.WriteLine("Finalizando ejecución de RunContinuationTasks...");
             Console.WriteLine("Presione <enter> para finalizar");
             Console.ReadLine();
         }
@@ -57,39 +58,39 @@ namespace Lab_02
 
         static void RunLINQ()
         {
-            System.Diagnostics.Stopwatch S = new System.Diagnostics.Stopwatch();
-            S.Start();
-            List<ProductDTO> Products = NorthWind.Repository.Products.Select(
-                    product => new ProductDTO
-                    {
-                        ProductId = product.ProductID,
-                        ProductName = product.ProductName,
-                        UnitPrice = product.UnitPrice,
-                        UnitsInStock = product.UnitsInStock
-                    }
-                ).ToList();
-            S.Stop();
-            WriteToConsole($"Tiempo de ejecución con LINQ: {S.ElapsedTicks} ticks... para un total" +
-                $" de {Products.Count} productos recuperados.");
+            //System.Diagnostics.Stopwatch S = new System.Diagnostics.Stopwatch();
+            //S.Start();
+            //List<ProductDTO> Products = NorthWind.Repository.Products.Select(
+            //        product => new ProductDTO
+            //        {
+            //            ProductId = product.ProductID,
+            //            ProductName = product.ProductName,
+            //            UnitPrice = product.UnitPrice,
+            //            UnitsInStock = product.UnitsInStock
+            //        }
+            //    ).ToList();
+            //S.Stop();
+            //WriteToConsole($"Tiempo de ejecución con LINQ: {S.ElapsedTicks} ticks... para un total" +
+            //    $" de {Products.Count} productos recuperados.");
         }
 
         static void RunPLINQ()
         {
-            System.Diagnostics.Stopwatch S = new System.Diagnostics.Stopwatch();
-            S.Start();
-            List<ProductDTO> Products = NorthWind.Repository.Products.AsParallel()
-                .Select(
-                    product => new ProductDTO
-                    {
-                        ProductId = product.ProductID,
-                        ProductName = product.ProductName,
-                        UnitPrice = product.UnitPrice,
-                        UnitsInStock = product.UnitsInStock
-                    }
-                ).ToList();
-            S.Stop();
-            WriteToConsole($"Tiempo de ejecución con PLINQ: {S.ElapsedTicks} ticks... para un total" +
-                $" de {Products.Count} productos recuperados.");
+            //System.Diagnostics.Stopwatch S = new System.Diagnostics.Stopwatch();
+            //S.Start();
+            //List<ProductDTO> Products = NorthWind.Repository.Products.AsParallel()
+            //    .Select(
+            //        product => new ProductDTO
+            //        {
+            //            ProductId = product.ProductID,
+            //            ProductName = product.ProductName,
+            //            UnitPrice = product.UnitPrice,
+            //            UnitsInStock = product.UnitsInStock
+            //        }
+            //    ).ToList();
+            //S.Stop();
+            //WriteToConsole($"Tiempo de ejecución con PLINQ: {S.ElapsedTicks} ticks... para un total" +
+            //    $" de {Products.Count} productos recuperados.");
         }
 
         static void WriteToConsole(string message)
@@ -99,6 +100,36 @@ namespace Lab_02
             Console.WriteLine($"{message}. {Thread.CurrentThread.ManagedThreadId}");
             // Thread.Sleep(5000);
             // Console.WriteLine($"Fin de la tarea. {Thread.CurrentThread.ManagedThreadId}");
+        }
+
+        static List<string> GetProductNames()
+        {
+            Thread.Sleep(3000);
+            throw new NotImplementedException();
+            return new List<string> { "PlayStation 4", "Tomb Raider", "PES", "The Last Of Us", "FIFA 18" };
+        }
+
+        static void RunContinuationTasks()
+        {
+            Task<List<string>> GameNamesTask = new Task<List<string>>(
+                    () => GetProductNames());
+
+            Task<int> ProcessGameNames = GameNamesTask.ContinueWith(
+                gameNameTask => ProcessData(gameNameTask.Result));
+
+            GameNamesTask.Start();
+            Console.WriteLine($"El número de nombres de juegos procesados es: {ProcessGameNames.Result}");
+        }
+
+        static int ProcessData(List<string> GameNames)
+        {
+            int i = 0;
+            foreach(string name in GameNames)
+            {
+                Console.WriteLine($"Nombre ({++i}): {name}");
+            }
+
+            return GameNames.Count;
         }
     }
 }
