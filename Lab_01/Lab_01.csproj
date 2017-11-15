@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IProductImporter.cs" />
     <Compile Include="Lab_01.cs">
       <SubType>Form</SubType>
     </Compile>

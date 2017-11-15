@@ -31,10 +31,11 @@ namespace Lab_02
                     () => WriteToConsole("Tarea 1."),
                     () => WriteToConsole("Tarea 2."),
                     () => WriteToConsole("Tarea 3."));
-            }catch(AggregateException ex)
+            }
+            catch (AggregateException ex)
             {
                 Console.WriteLine("Por procesar " + ex.InnerExceptions.Count + " exepciones.");
-                foreach(var exe in ex.InnerExceptions)
+                foreach (var exe in ex.InnerExceptions)
                 {
                     Console.WriteLine("Exepción: " + exe.Message);
                 }
@@ -42,7 +43,7 @@ namespace Lab_02
         }
 
         static void ParallelLoopIterate()
-        { 
+        {
             int[] ArrayOfInts = new int[5];
             ParallelLoopResult ForLoopResult = Parallel.For(0, 5, delegate (int index)
             {
@@ -115,21 +116,58 @@ namespace Lab_02
                     () => GetProductNames());
 
             Task<int> ProcessGameNames = GameNamesTask.ContinueWith(
-                gameNameTask => ProcessData(gameNameTask.Result));
-
-            GameNamesTask.Start();
-            Console.WriteLine($"El número de nombres de juegos procesados es: {ProcessGameNames.Result}");
+                gameNameTask => { Console.WriteLine("Ejecutando tarea de continuación");
+                    try
+                    {
+                        return ProcessData(gameNameTask.Result);
+                    }
+                    catch (AggregateException) { Console.WriteLine("Exepcion manejada"); return 0; } });
+            //try
+            //{
+                GameNamesTask.Start();
+            //}
+            //catch { Console.WriteLine("Exepcion manejada"); }
+            //try
+            //{
+            //    Console.WriteLine($"El número de nombres de juegos procesados es:");
+            //Console.WriteLine($"{GameNamesTask.Result}");
+                Console.WriteLine($"El número de nombres de juegos procesados es: {ProcessGameNames.Result}");
+            //}
+            //catch (AggregateException ex)
+            //{
+            //    Console.WriteLine($"Exepción controlada: {ex.Message}");
+            //}
         }
 
         static int ProcessData(List<string> GameNames)
         {
             int i = 0;
-            foreach(string name in GameNames)
+            foreach (string name in GameNames)
             {
                 Console.WriteLine($"Nombre ({++i}): {name}");
             }
 
             return GameNames.Count;
         }
+
+        //static int ProcessData(Task<List<string>> GameNames)
+        //{
+        //    List<string> gamesnames = GameNames.Result;
+        //    int i = 0;
+        //    if (GameNames.Status != TaskStatus.Faulted)
+        //    {
+        //        foreach (string name in GameNames.Result)
+        //        {
+        //            Console.WriteLine($"Nombre ({++i}): {name}");
+        //        }
+
+        //        return GameNames.Result.Count;
+        //    }
+        //    else
+        //    {
+        //        Console.WriteLine($"Sin información de nombres de juego");
+        //        return i;
+        //    }
+        //}
     }
 }

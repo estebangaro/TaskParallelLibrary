@@ -16,6 +16,8 @@ namespace Lab_01
         private CancellationToken[] Ct;
         private Task[] LongTask;
         private Task SecondTask;
+        private CancellationTokenSource cts;
+        private CancellationToken ct;
 
         private void CreateTask()
         {
@@ -263,17 +265,27 @@ namespace Lab_01
                     () => GetProductNames());
          
             Task<int> ProcessGameNames = GameNamesTask.ContinueWith(
-                gameNameTask => ProcessData(gameNameTask));
-
-            GameNamesTask.Start();
-            try
-            {
+                gameNameTask => {
+                    AddMessage("Ejecutando tarea de continuación");
+                    return ProcessData(gameNameTask.Result);
+                });
+            //try
+            //{
+                GameNamesTask.Start();
+            //}
+            //catch { AddMessage("Controlando exepcion"); }
+            //try
+            //{
+            //    GameNamesTask.Wait();
+            //}
+            //try
+            //{
                 AddMessage($"El número de nombres de juegos procesados es: {ProcessGameNames.Result}");
-            }
-            catch (AggregateException ex)
-            {
-                AddMessage($"Exepción controlada: {ex.Message}");
-            }
+            //}
+            //catch (AggregateException ex)
+            //{
+            //    AddMessage($"Exepción controlada: {ex.Message}");
+            //}
         }
 
         int ProcessData(List<string> GameNames)
@@ -297,7 +309,7 @@ namespace Lab_01
 
         int ProcessData(Task<List<string>> GameNames)
         {
-            List<string> gamesnames = GameNames.Result;
+            // List<string> gamesnames = GameNames.Result;
             int i = 0;
             if (GameNames.Status != TaskStatus.Faulted)
             {
@@ -315,6 +327,81 @@ namespace Lab_01
             }
         }
 
+        private void button6_Click(object sender, EventArgs e)
+        {
+            AddMessage("Creando tareas...");
+            ProductImporter productImporterObj = new ProductImporter();
+            ProductInfo productImporterObj2 = new ProductInfo { Id = -75, Name = "Esteban GaRo"};
+            cts = new CancellationTokenSource();
+            ct = cts.Token;
+
+            Task<ProductInfo> ProcessTask = Task.Factory.StartNew(product =>
+            {
+                AddMessage("Ejecutando Process...");
+                ProductInfo p = productImporterObj.Process((ProductInfo)product, ct);
+                AddMessage("Finalizando Process...");
+
+                return p;
+            }, productImporterObj2, ct);
+
+            Task SaveTask = ProcessTask.ContinueWith(delegate (Task<ProductInfo> AntecendtTask)
+            {
+                if (AntecendtTask.Status != TaskStatus.Canceled)
+                {
+                    AddMessage($"Ejecutando Save con ProductInfo procesado...{AntecendtTask.Result}");
+                    productImporterObj.Save(AntecendtTask);
+                    AddMessage("Finalizando Save...");
+                }
+                else
+                {
+                    AddMessage("Se ha suspendido la ejecución de Save por cancelación bajo demanda de process" +
+                        $" con ProductInfo procesado...");
+                }
+            });
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    ProcessTask.Wait();
+                }
+                catch (AggregateException ex)
+                {
+                    AddMessage("Procesando exepción: " + ex.Message);
+                }
+            });
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            cts.Cancel();
+        }
+
         //private void Lab_01_Load(object sender, EventArgs e) => ReturnTaskValue(); //RunTaskGroup(); //CreateTask();
+    }
+
+    public class ProductImporter : IProductImporter
+    {
+        public ProductInfo Process(ProductInfo product, CancellationToken token)
+        {
+            ProductInfo Result = new ProductInfo();
+            ProcessProductInfo(product, Result, token);
+            return Result;
+        }
+
+        private void ProcessProductInfo(ProductInfo product, ProductInfo result, CancellationToken Token)
+        {
+            Thread.Sleep(2000);
+            Token.ThrowIfCancellationRequested();
+            result.Id = product.Id + 100;
+            Thread.Sleep(3000);
+            Token.ThrowIfCancellationRequested();
+            result.Name = product.Name.ToUpper();
+        }
+
+        public void Save(Task<ProductInfo> t)
+        {            
+            Thread.Sleep(3000);
+        }
     }
 }
