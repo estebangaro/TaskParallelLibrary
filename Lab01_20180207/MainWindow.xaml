@@ -7,6 +7,13 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
     <Grid>
-        <Label x:Name="Messages"></Label>
+        <Label x:Name="Messages" Margin="0,0,0,123">
+        </Label>
+        <Button Content="Iniciar Tarea" x:Name="btnIniciarTarea" Click="btnIniciarTarea_Click"
+                HorizontalAlignment="Left" Margin="210,225,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Cancelar Tarea" x:Name="btnCancelarTarea" Click="btnCancelarTarea_Click" 
+                HorizontalAlignment="Left" Margin="210,245,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Mostrar Estatus" x:Name="btnMostrarEstatus" Click="btnMostrarEstatus_Click"
+                HorizontalAlignment="Left" Margin="210,265,0,0" VerticalAlignment="Top" Width="75"/>
     </Grid>
 </Window>

@@ -9,14 +9,17 @@ namespace Lab01_20180207
     /// </summary>
     public partial class MainWindow : Window
     {
+        private Task LongOperationTask;
+        private CancellationTokenSource cts;
+        private CancellationToken ct;
+
         public MainWindow()
         {
             InitializeComponent();
             // CreateTask();
             // RunTaskGroup();
-            ReturnTaskValue();
+            // ReturnTaskValue();
 
-            // Continuar con Ejercicio 4 Cancelando tareas de larga duración.
         }
 
         //Ejercicio 2
@@ -153,6 +156,58 @@ namespace Lab01_20180207
         public void ShowMessage()
         {
             MessageBox.Show("Ejecutando método ShowMessage");
+        }
+
+        // Ejercicio 4
+        private void btnIniciarTarea_Click(object sender, RoutedEventArgs e)
+        {
+            cts = new CancellationTokenSource();
+            ct = cts.Token;
+            Task.Run(delegate ()
+            {
+                LongOperationTask = Task.Run(() =>
+                {
+                    DoLongRunningTask(ct);
+                }, ct);
+
+                try
+                {
+                    LongOperationTask.Wait();
+                }
+                catch (AggregateException ae)
+                {
+                    foreach (var es in ae.InnerExceptions)
+                    {
+                        AddMessage($"Manejando excepción: {es.GetType().ToString()}");
+                    }
+                }
+            });
+        }
+
+        private void DoLongRunningTask(CancellationToken ct)
+        {
+            int[] idsArray = new int[] { 2, 6, 8, 10, 45, 23, 67, 34, 7, 1 };
+            for(int i = 0; i < idsArray.Length && !ct.IsCancellationRequested; i++)
+            {
+                AddMessage($"Procesando Id = {idsArray[i]}");
+                Thread.Sleep(2000);
+            }
+            if (ct.IsCancellationRequested)
+            {
+                AddMessage("Proceso cancelado");
+                ct.ThrowIfCancellationRequested();
+            }
+        }
+
+        // Ejercicio 4
+        private void btnCancelarTarea_Click(object sender, RoutedEventArgs e)
+        {
+            cts.Cancel();
+        }
+
+        private void btnMostrarEstatus_Click(object sender, RoutedEventArgs e)
+        {
+            AddMessage($"Estatus tarea: {LongOperationTask.Status}");
         }
     }
 }
