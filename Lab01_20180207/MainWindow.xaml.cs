@@ -168,19 +168,19 @@ namespace Lab01_20180207
                 LongOperationTask = Task.Run(() =>
                 {
                     DoLongRunningTask(ct);
-                }, ct);
+                }/*, ct*/);
 
-                try
-                {
-                    LongOperationTask.Wait();
-                }
-                catch (AggregateException ae)
-                {
-                    foreach (var es in ae.InnerExceptions)
-                    {
-                        AddMessage($"Manejando excepción: {es.GetType().ToString()}");
-                    }
-                }
+                //try
+                //{
+                    //LongOperationTask.Wait();
+                //}
+                //catch (AggregateException ae)
+                //{
+                //    foreach (var es in ae.InnerExceptions)
+                //    {
+                //        AddMessage($"Manejando excepción: {es.GetType().ToString()}");
+                //    }
+                //}
             });
         }
 
