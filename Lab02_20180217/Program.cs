@@ -11,10 +11,33 @@ namespace Lab02_20180217
     {
         static void Main(string[] args)
         {
-            RunParallelTasks();
+            // RunParallelTasks();
+            ParallelLoopIterate();
             Console.WriteLine("Presione enter para finalizar");
             Console.ReadLine();
-            // Continuar con tarea 3, ejercicio 1.
+            // Continuar con tarea 4, ejercicio 1 Utilizando parallel LINQ.
+        }
+
+        // Tarea 3
+        private static void ParallelLoopIterate()
+        {
+            int[] SquareIntsArray = new int[5];
+            Parallel.For(0, 5, delegate (int indice)
+            {
+                SquareIntsArray[indice] = indice * indice;
+                //Console.WriteLine($"Calculando el cuadrado de {indice}");
+                // Ejercicio propuesto
+                Console.WriteLine($"Calculando el cuadrado de {indice}, en Thread: " +
+                    $"{Thread.CurrentThread.ManagedThreadId}");
+            });
+            Console.WriteLine("Mostrando los valores calculados...");
+            Parallel.ForEach(SquareIntsArray, SquareInt =>
+            {
+                //Console.WriteLine($"Cuadrado de {Array.IndexOf(SquareIntsArray, SquareInt)}: {SquareInt}");
+                // Ejercicio propuesto.
+                Console.WriteLine($"Cuadrado de {Math.Sqrt(SquareInt)} = {SquareInt}, en Thread: " +
+                    $"{Thread.CurrentThread.ManagedThreadId}");
+            });
         }
 
         // Tarea 2
