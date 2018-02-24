@@ -17,9 +17,15 @@ namespace Lab02_20180217
             // RunPLINQ();
             //RunCustomExercise1(1, true);
             //RunCustomExercise1(6, false);
+
+            // RunContinuationTask();
+            //RunNestedTasks(); 
+
+            NestedTaskExcercise2();
             Console.WriteLine("Presione enter para finalizar");
             Console.ReadLine();
-            // Continuar con tarea 1, ejercicio 2 Enlazando Tareas.
+
+            // Continuar con Ejercicio 3, "Manejo de excepciones en Tareas"
         }
 
         // Tarea 3, Ejercicio 1
@@ -145,6 +151,122 @@ namespace Lab02_20180217
             // 1 tick => 100x10-9 s; 
             // elapsedTicks ticks => ¿? s
             return (elapsedTicks * .000000100).ToString();
+        }
+
+        // Tarea 1, Ejercicio 2
+        private static List<string> GetProductNames()
+        {
+            Thread.Sleep(3000);
+            return NorthWind.Repository.Products.Select(product => product.ProductName).ToList();
+        }
+
+        // Tarea 1, Ejercicio 2
+        private static void RunContinuationTask()
+        {
+            Task<List<string>> FirstTask = new Task<List<string>>(GetProductNames);
+            Task<int> SecondTask = 
+                FirstTask.ContinueWith<int>(antecedentTask => ProcessData(antecedentTask.Result));
+
+            FirstTask.Start();
+            Console.WriteLine($"Número de productos procesados: {SecondTask.Result}");
+        }
+
+        // Tarea 1, Ejercicio 2
+        private static int ProcessData(List<string> productNames)
+        {
+            foreach(var nombre in productNames)
+            {
+                Console.WriteLine(nombre);
+            }
+            return productNames.Count;
+        }
+
+        // Tarea 2, Ejercicio 2
+        private static void RunNestedTasks()
+        {
+            var OuterTask = Task.Factory.StartNew(() =>
+            {
+                Console.WriteLine("Iniciando la tarea externa...");
+                var InnerTask = Task.Factory.StartNew(() =>
+                {
+                    Console.WriteLine("Iniciando tarea anidada");
+                    Thread.Sleep(3000);
+                    Console.WriteLine("Finalizando tarea anidada");
+                }, TaskCreationOptions.AttachedToParent);
+            });
+
+            OuterTask.Wait();
+            Console.WriteLine("Finalizando tarea externa");
+        }
+
+        // Tarea 2, Ejercicio Propuesto
+        private static void NestedTaskExcercise()
+        {
+            Task task = Task.Factory.StartNew(() =>
+            {
+                Console.WriteLine("Iniciando tarea externa");
+                Task childT = Task.Factory.StartNew(() =>
+                {
+                    Console.WriteLine("Iniciando tarea hija");
+                    Thread.Sleep(2000);
+                    throw new Exception("Excepción en tarea HIJA");
+                    Console.WriteLine("Finalizando tarea hija");
+                }, TaskCreationOptions.AttachedToParent);
+                throw new Exception("Excepción en tarea padre");
+            });
+
+            try
+            {
+                task.Wait();
+            }
+            catch (AggregateException ae)
+            {
+                Console.WriteLine("Excepción controlada");
+                foreach(var excepcion in ae.InnerExceptions)
+                {
+                    Console.WriteLine(excepcion.InnerException != null ?
+                        excepcion.InnerException.Message : excepcion.Message);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Excepción desconocida");
+            }
+            Console.WriteLine($"La tarea externa ha finalizado, estatus {task.Status}");
+        }
+
+        // Tarea 2, Ejercicio Propuesto
+        private static void NestedTaskExcercise2()
+        {
+            Task task = Task.Run(() =>
+            {
+                Console.WriteLine("Iniciando tarea externa");
+                Task childT = Task.Run(() =>
+                {
+                    Console.WriteLine("Iniciando tarea hija");
+                    Thread.Sleep(2000);
+                    Console.WriteLine("Finalizando tarea hija");
+                });
+            });
+
+            try
+            {
+                task.Wait();
+            }
+            catch (AggregateException ae)
+            {
+                Console.WriteLine("Excepción controlada");
+                foreach (var excepcion in ae.InnerExceptions)
+                {
+                    Console.WriteLine(excepcion.InnerException != null ?
+                        excepcion.InnerException.Message : excepcion.Message);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Excepción desconocida");
+            }
+            Console.WriteLine($"La tarea externa ha finalizado, estatus {task.Status}");
         }
     }
 }
