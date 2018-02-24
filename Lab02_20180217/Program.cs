@@ -21,11 +21,11 @@ namespace Lab02_20180217
             // RunContinuationTask();
             //RunNestedTasks(); 
 
-            NestedTaskExcercise2();
+            //NestedTaskExcercise2();
+
+            HandleTaskExceptions();
             Console.WriteLine("Presione enter para finalizar");
             Console.ReadLine();
-
-            // Continuar con Ejercicio 3, "Manejo de excepciones en Tareas"
         }
 
         // Tarea 3, Ejercicio 1
@@ -267,6 +267,45 @@ namespace Lab02_20180217
                 Console.WriteLine("Excepción desconocida");
             }
             Console.WriteLine($"La tarea externa ha finalizado, estatus {task.Status}");
+        }
+
+        // Ejercicio 3, Tarea 1.
+        private static void RunLongTask(CancellationToken ct)
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                Thread.Sleep(2000);
+                ct.ThrowIfCancellationRequested();
+            }
+        }
+        // Ejercicio 3, Tarea 1.
+        private static void HandleTaskExceptions()
+        {
+            CancellationTokenSource cts = new CancellationTokenSource();
+            CancellationToken ct = cts.Token;
+
+            Task LongTask = Task.Run(delegate ()
+            {
+                RunLongTask(ct);
+            }, ct);
+            cts.Cancel();
+            try
+            {
+                LongTask.Wait();
+            }
+            catch (AggregateException ae)
+            {
+                foreach (var excepcion in ae.InnerExceptions)
+                {
+                    Console.WriteLine($"Excepción controlada: " +
+                        $"{(excepcion.InnerException != null ? excepcion.InnerException.Message : excepcion.Message)}" +
+                        $", Tipo: {excepcion.GetType().Name}");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Manejo de excepción no esperada...");
+            }
         }
     }
 }
