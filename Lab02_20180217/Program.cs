@@ -23,7 +23,12 @@ namespace Lab02_20180217
 
             //NestedTaskExcercise2();
 
-            HandleTaskExceptions();
+            //HandleTaskExceptions();
+            //HandleInnerTaskExcepcion();
+            //HandleChildTaskExcepcion();
+            //JoiningThreadHandleException();
+
+            HandleTaskExceptionsInInvokesMethods();
             Console.WriteLine("Presione enter para finalizar");
             Console.ReadLine();
         }
@@ -305,6 +310,203 @@ namespace Lab02_20180217
             catch (Exception e)
             {
                 Console.WriteLine("Manejo de excepción no esperada...");
+            }
+        }
+
+        // Ejercicio Propuesto - Enlazando y manejando excepciones en Tareas.
+        private static void HandleInnerTaskExcepcion()
+        {
+            Task tareaPrincipal = Task.Run(delegate ()
+            {
+                Console.WriteLine("Iniciando tarea Principal");
+                Task tareaAnidada = Task.Run(() => {
+                    Console.WriteLine("Iniciando tareaAnidada");
+                    Thread.Sleep(2000);
+                    throw new Exception("Excepción en tarea Anidada");
+                    Console.WriteLine("Finalizando tareaAnidada");
+                });
+                Thread.Sleep(1000);
+                throw new Exception("Excepción en tarea Principal");
+            });
+
+            try
+            {
+                tareaPrincipal.Wait();
+                Console.WriteLine("Finalizando tarea Principal");
+            }
+            catch (AggregateException ae)
+            {
+                Console.WriteLine("Iniciando control de excepciones en Hilo MAIN (aggregate exception)");
+                foreach (var excepcion in ae.InnerExceptions)
+                {
+                    Console.WriteLine($"Excepción controlada: " +
+                        $"{(excepcion.InnerException != null ? excepcion.InnerException.Message : excepcion.Message)}" +
+                        $", Tipo: {excepcion.GetType().Name}");
+                }
+                Console.WriteLine("Finalizando control de excepciones en Hilo MAIN");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Iniciando control de excepciones en Hilo MAIN (exception)," +
+                    $" {e.Message}");
+            }
+        }
+
+        // Ejercicio Propuesto - Enlazando y manejando excepciones en Tareas.
+        private static void HandleChildTaskExcepcion()
+        {
+            Task tareaPrincipal = Task.Factory.StartNew(delegate ()
+        {
+            Console.WriteLine("Iniciando tarea Principal");
+            Task tareaHija = Task.Factory.StartNew(() =>
+            {
+                Console.WriteLine("Iniciando tarea Hija");
+                Thread.Sleep(2000);
+                throw new Exception("Excepción en tarea Hija");
+                Console.WriteLine("Finalizando tarea Hija");
+            }, TaskCreationOptions.AttachedToParent);
+            Thread.Sleep(1000);
+            throw new Exception("Excepción en tarea Principal");
+        });
+
+            try
+            {
+                tareaPrincipal.Wait();
+                Console.WriteLine("Finalizando tarea Principal");
+            }
+            catch (AggregateException ae)
+            {
+                Console.WriteLine("Iniciando control de excepciones en Hilo MAIN (aggregate exception)");
+                foreach (var excepcion in ae.InnerExceptions)
+                {
+                    Console.WriteLine($"Excepción controlada: " +
+                        $"{(excepcion.InnerException != null ? excepcion.InnerException.Message : excepcion.Message)}" +
+                        $", Tipo: {excepcion.GetType().Name}");
+                }
+                Console.WriteLine("Finalizando control de excepciones en Hilo MAIN");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Iniciando control de excepciones en Hilo MAIN (exception)," +
+                    $" {e.Message}");
+            }
+        }
+
+        // Ejercicio Propuesto - Enlazando y manejando excepciones en Tareas.
+        private static void JoiningThreadHandleException()
+        {
+            Task tareaPrincipal = new Task(() =>
+            {
+                Console.WriteLine("Iniciando tarea principal");
+                Thread.Sleep(2000);
+                throw new Exception("Excepción en tarea Principal");
+                Console.WriteLine("Finalizando tarea principal");
+            });
+            tareaPrincipal.Start();
+            Task tareaAuxiliar = Task.Run(delegate ()
+            {
+                //tareaPrincipal.Start();
+                HandleException(tareaPrincipal, "Secundario", true);
+            });
+
+            HandleException(tareaAuxiliar, "MAIN");
+        }
+
+        private static void HandleException(Task tareaPrincipal, string hilo,
+            bool reelanzaExcepcion = false)
+        {
+            try
+            {
+                tareaPrincipal.Wait();
+            }
+            catch (AggregateException ae)
+            {
+                Console.WriteLine($"Iniciando control de excepciones en Hilo {hilo} (aggregate exception)");
+                foreach (var excepcion in ae.InnerExceptions)
+                {
+                    Console.WriteLine($"Excepción controlada: " +
+                        $"{(excepcion.InnerException != null ? excepcion.InnerException.Message : excepcion.Message)}" +
+                        $", Tipo: {excepcion.GetType().Name}");
+                }
+                Console.WriteLine($"Finalizando control de excepciones en Hilo {hilo}");
+                if (reelanzaExcepcion)
+                    throw ae;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Iniciando control de excepciones en Hilo {hilo} (exception)," +
+   $" {e.Message}");
+                if (reelanzaExcepcion)
+                    throw e;
+            }
+        }
+
+        // Ejercicio Propuesto - Manejo de excepciones durante la invocación de métodos de Parallel.
+        private static void HandleTaskExceptionsInInvokesMethods()
+        {
+            Action[] acciones =
+            {
+                () =>{ Console.WriteLine("Ejecutando acción 1"); Thread.Sleep(2000); Console.WriteLine("Finalizando acción 1"); },
+                ()=>{ Console.WriteLine("Ejecutando acción 2"); Thread.Sleep(2000); throw new Exception("Excepción en acción 2"); Console.WriteLine("Finalizando acción 2");},
+                ()=>{ Console.WriteLine("Ejecutando acción 3"); Thread.Sleep(2000); Console.WriteLine("Finalizando acción 3");}
+            };
+
+            // Invoke
+            //try
+            //{
+            //    Parallel.Invoke(acciones);
+            //}
+            //catch (AggregateException ae)
+            //{
+            //    Console.WriteLine($"Iniciando control de excepciones en Hilo MAIN (aggregate exception)");
+            //    foreach (var excepcion in ae.InnerExceptions)
+            //    {
+            //        Console.WriteLine($"Excepción controlada: " +
+            //            $"{(excepcion.InnerException != null ? excepcion.InnerException.Message : excepcion.Message)}" +
+            //            $", Tipo: {excepcion.GetType().Name}");
+            //    }
+            //    Console.WriteLine($"Finalizando control de excepciones en Hilo MAIN");
+            //}
+
+            // For
+            try
+            {
+                Parallel.For(0, 5, delegate (int indice) {
+                    Console.WriteLine($"Procesando indice {indice}");
+                    Thread.Sleep(2000);
+                    if (indice == 3) throw new Exception($"Excepción en indice [{indice}]");
+                });
+            }
+            catch (AggregateException ae)
+            {
+                Console.WriteLine($"Iniciando control de excepciones en Hilo MAIN (aggregate exception)");
+                foreach (var excepcion in ae.InnerExceptions)
+                {
+                    Console.WriteLine($"Excepción controlada: " +
+                        $"{(excepcion.InnerException != null ? excepcion.InnerException.Message : excepcion.Message)}" +
+                        $", Tipo: {excepcion.GetType().Name}");
+                }
+                Console.WriteLine($"Finalizando control de excepciones en Hilo MAIN");
+            }
+
+            // ForEach
+            try
+            {
+                Parallel.ForEach<Action>(acciones, (accion) =>
+                {
+                    accion();
+                });
+            }
+            catch (AggregateException ae)
+            {
+                Console.WriteLine($"Iniciando control de excepciones en Hilo MAIN (aggregate exception)");
+                foreach (var excepcion in ae.InnerExceptions)
+                {
+                    Console.WriteLine($"Excepción controlada: " +
+                        $"{(excepcion.InnerException != null ? excepcion.InnerException.Message : excepcion.Message)}" +
+                        $", Tipo: {excepcion.GetType().Name}");
+                }
+                Console.WriteLine($"Finalizando control de excepciones en Hilo MAIN");
             }
         }
     }

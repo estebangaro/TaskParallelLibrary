@@ -1,0 +1,37 @@
+Escenarios de aplicación (Enlazamiento de tareas y manejo de excepciones).
+
+Tarea Principal + Tareas ANIDADAS.
+	1) Con Thread MAIN accediendo a Tarea PRINCIPAL, Con Thread MAIN no acciendo a Tarea PRINCIPAL.
+		a) Generación de excepciones en Tareas ANIDADAS.
+			* No existe manejo de reelanzamiento de excepciones en tarea PRINCIPAL.
+		b) Generación de excepciones en Tarea PRINCIPAL.
+			* Control de excepciones en hilo MAIN.
+		c) Generación de excepciones en Tarea PRINCIPAL + ANIDADA.
+			* Control de excepciones únicamente de la Tarea PRINCIPAL.
+		d) Generación de excepciones en Tareas HIJAS.
+			* Control de excepciones a través de tarea PRINCIPAL.
+		e) Generación de excepciones en Tarea PRINCIPAL.
+			* Control de excepciones en hilo MAIN (tarea principal).
+		f) Generación de excepciones en Tarea PRINCIPAL + HIJAS.
+			* Control de excepciones en hilo MAIN (tarea principal-excepcion y tarea hija-aggreate exception).
+			* NO EXISTE CONTROL DE EXCEPCIONES EN TAREA PRINCIPAL CON SOLO CREAR LA TAREA COMO HIJA, ES NECESARIO
+				"ESPERAR" POR LA TAREA.
+		
+Joining Thread
+	1) El thread (hilo) en el cual se propagan las excepciones (agregate-excepcion) de 1 o más tareas (HIJAS) es conocido
+		como hilo de Unión, este es el hilo que INICIA una tarea y no necesariamente el que la crea. 
+		¿ El HILO de unión en realidad es aquel que solo INICIA la tarea?
+		a) Crear e iniciar una tarea que genere una excepcion, donde la creación e inicialización se realicen
+			en un mismo Thread. 
+			* Control de excepciones en hilo que crea e inicializa la tarea.
+		b) Crear e iniciar una tarea que genere una excepcion, donde la creación se realice en un Thread distinto
+			al de la inicialización.
+			* Control de excepciones en HILO QUE "ESPERA/ACCEDE" a la tarea, sin considerar quien la cree e inicialice.
+
+Escenarios de aplicación (Ejecución de tareas múltiples y ejecución de iteraciones de ciclo en paralelo).
+	1) Cuando utilizamos los métodos estáticos Invoke, For y ForEach de la clase Parallel, se suspende de manera 
+		indirecta el hilo invocador hasta que se complete la ejecución de cada una de las operaciones en paralelo,
+		¿Al usar cualquiera de éstos métodos, podemos manejar las excepciones generadas por algunas de sus operaciones?.
+		* Invoke. Se genera correctamente el control de excepciones.
+		* For. Se genera correctamente el control de excepciones.
+		* ForEach. Se genera correctamente el control de excepciones.
